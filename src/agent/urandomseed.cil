@@ -1,0 +1,69 @@
+;; -*- mode: CIL; fill-column: 79; indent-tabs-mode: nil; -*-
+;; SPDX-FileCopyrightText: © 2020 Dominick Grift <dominick.grift@defensec.nl>
+;; SPDX-License-Identifier: Unlicense
+
+(in .sys
+    (call .urandomseed.subj_type_transition (subj)))
+
+(in .file
+    (call .urandomseed.conffile_obj_type_transition_miscfile
+          (unconfined.subj_typeattr file "urandom.seed"))
+    (call .urandomseed.obj_type_transition_execfile
+          (unconfined.subj_typeattr)))
+
+(block urandomseed
+
+       ;;
+       ;; Contexts
+       ;;
+
+       (filecon
+        "/etc/urandom\.seed"
+        file
+        miscfile_file_context)
+
+       (filecon
+        "/usr/bin/urandom_seed"
+        file
+        execfile_file_context)
+
+       ;;
+       ;; Macros
+       ;;
+
+       (macro conffile_obj_type_transition_miscfile ((type ARG1)(class ARG2)(name ARG3))
+              (call .file.conffile_obj_type_transition
+                    (ARG1 miscfile ARG2 ARG3)))
+
+       (macro obj_type_transition_execfile ((type ARG1))
+              (call .file.execfile_obj_type_transition
+                    (ARG1 execfile file "urandom_seed")))
+
+       ;;
+       ;; Policy
+       ;;
+
+       (blockinherit .agent.base_template)
+       (blockinherit .file.misc.obj_template)
+
+       (call manage_miscfile_files (subj))
+       (call conffile_obj_type_transition_miscfile (subj file "*"))
+
+       (call .sys.list_rootfile_dirs (subj))
+       (call .sys.writeinherited_fifo_files (subj))
+
+       (call .file.deletename_conffile_dirs (subj))
+
+       (call .getrandom.subj_type_transition (subj))
+
+       (call .nameservice.read_miscfile_files (subj))
+
+       (call .selinux.linked.subj_type (subj))
+
+       (call .shell.execute_execfile_files (subj))
+
+       (call .tmp.list_fs_dirs (subj))
+
+       (call .uci.subj_type_transition (subj))
+
+       (call .xattr.associate_filesystems (miscfile)))

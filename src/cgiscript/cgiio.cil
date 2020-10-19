@@ -1,0 +1,74 @@
+;; -*- mode: CIL; fill-column: 79; indent-tabs-mode: nil; -*-
+;; SPDX-FileCopyrightText: © 2020 Dominick Grift <dominick.grift@defensec.nl>
+;; SPDX-License-Identifier: Unlicense
+
+(in .sys
+    (call .cgiio.subj_type_transition (subj)))
+
+(in .file
+    (call .cgiio.execfile_obj_type_transition_cgiscriptfile
+          (unconfined.subj_typeattr)))
+
+(in .fw3
+    (call .cgiio.writeinherited_fifo_files (subj)))
+
+(in .logread
+    (call .cgiio.writeinherited_fifo_files (subj)))
+
+(in .xtables
+    (call .cgiio.writeinherited_fifo_files (subj)))
+
+(block cgiio
+
+       ;;
+       ;; Contexts
+       ;;
+
+       (filecon
+        "/usr/bin/cgi-io"
+        file
+        cgiscriptfile_file_context)
+
+       ;;
+       ;; Macros
+       ;;
+
+       (macro execfile_obj_type_transition_cgiscriptfile ((type ARG1))
+              (call .file.execfile_obj_type_transition
+                    (ARG1 cgiscriptfile file "cgi-io")))
+
+       ;;
+       ;; Policy
+       ;;
+
+       (blockinherit .cgiscript.base_template)
+
+       (allow subj self (capability2 (syslog)))
+       (allow subj self create_unix_stream_socket)
+
+       (call .sys.readringbuffer (subj))
+       (call .sys.writeinherited_fifo_files (subj))
+
+       (call .file.read_conffile_lnk_files (subj))
+       (call .file.search_initscriptfile_dirs (subj))
+
+       (call .locale.read.subj_type (subj))
+
+       (call .logread.subj_type_transition (subj))
+
+       (call .opkg.call.subj_type_transition (subj))
+
+       (call .selinux.linked.subj_type (subj))
+
+       (call .shell.execute_execfile_files (subj))
+
+       (call .tmpfile.search_runtimetmpfile_dirs (subj))
+
+       (call .ubusd.unix_stream_connect (subj))
+
+       (call .uhttpd.readwriteinherited_fifo_files (subj))
+
+       (call .xtables.subj_type_transition (subj))
+
+       (optional cgiio_opt_rcfirewall
+                 (call .rcfirewall.subj_type_transition (subj))))

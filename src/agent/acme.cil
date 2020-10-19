@@ -1,0 +1,141 @@
+;; -*- mode: CIL; fill-column: 79; indent-tabs-mode: nil; -*-
+;; SPDX-FileCopyrightText: © 2020 Dominick Grift <dominick.grift@defensec.nl>
+;; SPDX-License-Identifier: Unlicense
+
+(in .sys
+    (call .acme.subj_type_transition (subj)))
+
+(in .file
+    (call .acme.obj_type_transition_conffile (unconfined.subj_typeattr))
+    (call .acme.libfile_obj_type_transition_execfile
+          (unconfined.subj_typeattr))
+    (call .acme.obj_type_transition_runtimetmpfile (unconfined.subj_typeattr)))
+
+(in .uci
+    (call .acme.writeinherited_fifo_files (subj)))
+
+(block acme
+
+       ;;
+       ;; Contexts
+       ;;
+
+       (filecon
+        "/etc/acme"
+        dir
+        conffile_file_context)
+       (filecon
+        "/etc/acme/.*"
+        any
+        conffile_file_context)
+
+       (filecon
+        "/tmp/run/acme_boot"
+        file
+        runtimetmpfile_file_context)
+
+       (filecon
+        "/usr/lib/acme/acme\.sh"
+        file
+        execfile_file_context)
+       (filecon
+        "/usr/lib/acme/run-acme"
+        file
+        execfile_file_context)
+
+       ;;
+       ;; Macros
+       ;;
+
+       (macro getattr_conffile_files ((type ARG1))
+              (allow ARG1 conffile (file (getattr))))
+
+       (macro obj_type_transition_conffile ((type ARG1))
+              (call .file.conffile_obj_type_transition
+                    (ARG1 conffile dir "acme")))
+
+       (macro libfile_obj_type_transition_execfile ((type ARG1))
+              (call .file.libfile_obj_type_transition
+                    (ARG1 execfile file "acme.sh"))
+              (call .file.libfile_obj_type_transition
+                    (ARG1 execfile file "run-acme")))
+
+       (macro obj_type_transition_runtimetmpfile ((type ARG1))
+              (call .tmpfile.runtimetmpfile_obj_type_transition
+                    (ARG1 runtimetmpfile file "acme_boot")))
+
+       ;;
+       ;; Policy
+       ;;
+
+       (blockinherit .agent.base_template)
+       (blockinherit .file.conf.obj_template)
+       (blockinherit .tmpfile.runtime.obj_template)
+
+       (allow subj self create_udp_socket)
+       (allow subj self create_unix_dgram_socket)
+
+       (call manage_conffile_dirs (subj))
+       (call manage_conffile_files (subj))
+
+       (call execute_execfile_files (subj))
+
+       (call delete_runtimetmpfile_files (subj))
+
+       (call .sys.deletename_rootfile_dirs (subj))
+       (call .sys.writeinherited_fifo_files (subj))
+
+       (call .cron.addname_miscfile_dirs (subj))
+       (call .cron.create_miscfile_files (subj))
+       (call .cron.readwrite_miscfile_files (subj))
+
+       (call .file.read_conffile_lnk_files (subj))
+       (call .file.search_initscriptfile_dirs (subj))
+
+       (call .functions.read_miscfile_files (subj))
+       (call .functions.search_miscfile_dirs (subj))
+
+       (call .http.tcp_connect_netports (subj))
+
+       (call .locale.read.subj_type (subj))
+
+       (call .logd.unix_dgram_send (subj))
+
+       (call .nameservice.read_miscfile_files (subj))
+
+       (call .net.egress_netifs (subj))
+       (call .net.sendto_netnodes (subj))
+       (call .net.udp_bind_netnodes (subj))
+
+       (call .openssl.execute_execfile_files (subj))
+
+       (call .resolv.read_tmpfile_files (subj))
+
+       (call .selinux.linked.subj_type (subj))
+
+       (call .shell.execute_execfile_files (subj))
+
+       (call .socat.execute_execfile_files (subj))
+
+       (call .ssl.read_certfile_files (subj))
+       (call .ssl.read_certfile_lnk_files (subj))
+       (call .ssl.search_certfile_dirs (subj))
+
+       (call .tmpfile.deletename_runtimetmpfile_dirs (subj))
+
+       (call .uci.subj_type_transition (subj))
+
+       (call .wget.execute_execfile_files (subj))
+       (call .wget.manage_miscfile_files (subj))
+       (call .wget.rootfile_obj_type_transition_miscfile (subj))
+
+       (call .www.manage_miscfile_dirs (subj))
+       (call .www.manage_miscfile_files (subj))
+
+       (call .xtables.subj_type_transition (subj))
+
+       (optional acme_opt_rccron
+                 (call .rccron.subj_type_transition (subj)))
+
+       (optional acme_opt_rcuhttpd
+                 (call .rcuhttpd.subj_type_transition (subj))))

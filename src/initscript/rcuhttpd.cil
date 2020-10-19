@@ -1,0 +1,57 @@
+;; -*- mode: CIL; fill-column: 79; indent-tabs-mode: nil; -*-
+;; SPDX-FileCopyrightText: © 2020 Dominick Grift <dominick.grift@defensec.nl>
+;; SPDX-License-Identifier: Unlicense
+
+(in .sys
+    (call .rcuhttpd.subj_type_transition (subj)))
+
+(in .file
+    (call .rcuhttpd.obj_type_transition_initscriptfile
+          (unconfined.subj_typeattr)))
+
+(block rcuhttpd
+
+       ;;
+       ;; Contexts
+       ;;
+
+       (filecon
+        "/etc/init\.d/uhttpd"
+        file
+        initscriptfile_file_context)
+
+       ;;
+       ;; Macros
+       ;;
+
+       (macro obj_type_transition_initscriptfile ((type ARG1))
+              (call .file.initscriptfile_obj_type_transition
+                    (ARG1 initscriptfile file "uhttpd")))
+
+       ;;
+       ;; Policy
+       ;;
+
+       (blockinherit .initscript.base_template)
+
+       (call .file.deletename_conffile_dirs (subj))
+
+       (call .openssl.execute_execfile_files (subj))
+
+       (call .px5g.execute_execfile_files (subj))
+
+       (call .random.read_nodedev_chr_files (subj))
+
+       (call .ssl.read_certfile_files (subj))
+       (call .ssl.search_certfile_dirs (subj))
+
+       (call .uhttpd.conffile_obj_type_transition_certfile (subj))
+       (call .uhttpd.manage_certfile_files (subj))
+       (call .uhttpd.manage_conftmpfile_dirs (subj))
+       (call .uhttpd.obj_type_transition_conftmpfile (subj))
+
+       (optional rcuhttpd_opt_acme
+                 (call .acme.getattr_conffile_files (subj))
+                 (call .acme.read_conffile_lnk_files (subj))
+                 (call .acme.search_conffile_dirs (subj))
+                 (call .acme.use_fds (subj))))

@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: © 2020 Dominick Grift <dominick.grift@defensec.nl>
 # SPDX-License-Identifier: Unlicense
 
-.PHONY: all clean minimal policy check install
+.PHONY: all clean minimal myfork policy check install
 
 modules = $(shell find src -type f -name '*.cil' -printf '%p ')
 modulesminimal = $(shell find src -type f -name '*.cil' \
@@ -15,6 +15,8 @@ modulesminimal = $(shell find src -type f -name '*.cil' \
 	! -name sftpserver.cil ! -name socatexecfile.cil \
 	! -name uhttpd.cil ! -name wgetexecfile.cil \
 	! -name wgetmiscfile.cil -printf '%p ')
+modulesmyfork = $(shell find src -type f -name '*.cil' \
+	! -name sandbox.cil -printf '%p ')
 polvers = 31
 
 all: clean policy check
@@ -26,6 +28,10 @@ clean.%:
 minimal: minimal.$(polvers)
 minimal.%: $(modulesminimal)
 	secilc --policyvers=$* $^
+
+myfork: myfork.$(polvers)
+myfork.%: $(modulesmyfork)
+	secilc -vvv --policyvers=$* $^
 
 policy: policy.$(polvers)
 policy.%: $(modules)
